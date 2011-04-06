@@ -88,6 +88,7 @@ module Canonicurl
             status = http.response_header.status.to_i
             case status
             when 200...300
+              http.last_effective_url.port = nil if http.last_effective_url.port == 80 # don't show default port 80
               canonical_url = http.last_effective_url.to_s
               set url, canonical_url, url_key
               callbacks[:resolved].call(canonical_url, http) if callbacks[:resolved]
