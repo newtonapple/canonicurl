@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["David Dai"]
   s.email       = ["david.github@gmail.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/newtonapple/canonicurl"
   s.summary     = %q{A Canonical URL cache using Redis}
   s.description = %q{}
 
