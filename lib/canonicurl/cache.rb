@@ -43,12 +43,11 @@ module Canonicurl
       result = @db.get(k)
       if !result.nil? && result.size > 1
         return result
-
       end
 
       case result
       when CANONICAL
-        yield url
+        url
       when LOCKED
         resolve(url, k, callbacks)
         RESOLVING
