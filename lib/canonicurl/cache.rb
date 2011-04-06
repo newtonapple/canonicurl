@@ -18,7 +18,7 @@ module Canonicurl
     attr_reader :key_prefix
 
     def self.url(code_or_url)
-      code_or_url && code_or_url.size > 1 ? code_or_url : url
+      code_or_url && code_or_url.size > 1 ? code_or_url : nil
     end
 
 
