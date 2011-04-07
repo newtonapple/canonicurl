@@ -36,7 +36,7 @@ module Canonicurl
     end
 
 
-    def fetch(url, callbacks={})
+    def fetch(url, resolver)
       k = key(url)
       @db.setnx(k, LOCKED) #  lock it if key doesn't exist
 
@@ -49,8 +49,7 @@ module Canonicurl
       when CANONICAL
         url
       when LOCKED
-        resolve(url, k, callbacks)
-        RESOLVING
+        resolve(url, k, resolver)
       else
         result
       end
@@ -75,49 +74,28 @@ module Canonicurl
 
     private
 
-      def resolve(url, url_key, callbacks)
-        em_already_running = true
-        @db.set(url_key, RESOLVING)
-        em do |running|
-          em_already_running = running
-          http = EM::HttpRequest.new(url,
-                  :connection_timeout => @timeout,
-                  :inactivity_timeout => @timeout * 2).get(:redirects => @redirects)
-          http.callback {
-            status = http.response_header.status.to_i
-            case status
-            when 200...300
-              http.last_effective_url.port = nil if http.last_effective_url.port == 80 # don't show default port 80
-              canonical_url = http.last_effective_url.to_s
-              set url, canonical_url, url_key
-              callbacks[:resolved].call(canonical_url, http) if callbacks[:resolved]
-            else
-              @db.set url_key, (status / 100).to_s
-              callbacks[:failed].call(http) if callbacks[:failed]
-            end
-            EM.stop unless em_already_running
-          }    
-          http.errback  {
-            @db.set(url_key, ERROR) 
-            callbacks[:error].call(http) if callbacks[:error]
-            EM.stop unless em_already_running
-          }
-        end
+    def resolve(url, url_key, resolver)
+      @db.set(url_key, RESOLVING)
+      begin
+        canonical_url = resolver.call(url).to_s
       rescue Exception => e
         @db.set(url_key, ERROR)
-        callbacks[:exception].call(e) if callbacks[:exception]
-        EM.stop unless em_already_running
+        raise e
       end
 
-
-      def em
-        if EM.reactor_running? 
-          yield true
+      if canonical_url.size > 1
+        set url, canonical_url, url_key
+        canonical_url
+      else
+        if canonical_url.size == 1 && ![CANONICAL, ERROR, LOCKED, RESOLVING].include?(canonical_url)
+          @db.set(url_key, canonical_url) # save status
+          canonical_url
         else
-          EM.run do
-            yield false
-          end
+          @db.set(url_key, ERROR) # error
+          ERROR
         end
       end
+    end
+
   end
 end
