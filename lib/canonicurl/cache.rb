@@ -6,7 +6,6 @@ module Canonicurl
   class Cache
     CANONICAL  = 'C'
     ERROR      = 'E'
-    LOCKED     = 'L'
     RESOLVING  = 'R'
 
     TTL = 60 * 60 * 24 * 90 # 90 days ~ 3 months
@@ -38,21 +37,19 @@ module Canonicurl
 
     def fetch(url, resolver)
       k = key(url)
-      @db.setnx(k, LOCKED) #  lock it if key doesn't exist
+
+      # New URL resolve it
+      if @db.setnx(k, RESOLVING) #  lock it if key doesn't exist
+        return resolve(url, k, resolver)
+      end
 
       result = @db.get(k)
       if !result.nil? && result.size > 1
-        return result
+        return result # Found old noncanonical URL mapping
       end
 
-      case result
-      when CANONICAL
-        url
-      when LOCKED
-        resolve(url, k, resolver)
-      else
-        result
-      end
+      # CANONICAL, ERROR or RESOLVING
+      result == CANONICAL ? url : result
     end
 
 
