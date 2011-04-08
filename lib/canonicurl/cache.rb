@@ -1,6 +1,5 @@
 require 'digest/md5'
 require 'redis'
-require 'em-http'
 
 module Canonicurl  
   class Cache
