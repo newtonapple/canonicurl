@@ -24,8 +24,6 @@ module Canonicurl
       @ttl        = options[:ttl] || TTL
       @error_ttl  = options[:error_ttl] || ERROR_TTL
       @status_ttl = options[:status_ttl] || ERROR_TTL
-      @timeout    = options[:timeout] || CONNECTION_TIMEOUT
-      @redirects  = options[:redirects] || REDIRECTS
       @key_prefix = options[:key_prefix] || KEY_PREFIX
     end
 
